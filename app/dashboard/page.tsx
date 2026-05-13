@@ -43,6 +43,7 @@ function DashboardView() {
   const [filters, setFilters] = useState<ExpenseFilters>(DEFAULT_FILTERS);
   const [databaseOpen, setDatabaseOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!user || !activeDatabaseId) return;
@@ -69,19 +70,39 @@ function DashboardView() {
 
   const totalSpent = useMemo(() => filteredExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredExpenses]);
 
-  const dayTotal = useMemo(() => {
-    return filteredExpenses.reduce((sum, e) => {
+  const expensesForWeek = useMemo(() => {
+    const start = new Date(currentDate);
+    start.setDate(currentDate.getDate() - currentDate.getDay()); // Sunday
+    
+    return filteredExpenses.filter((e) => {
       const d = new Date(e.date);
-      if (
-        d.getFullYear() === currentDate.getFullYear() &&
-        d.getMonth() === currentDate.getMonth() &&
-        d.getDate() === currentDate.getDate()
-      ) {
-        return sum + e.amount;
-      }
-      return sum;
-    }, 0);
+      const diffTime = d.getTime() - start.getTime();
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      return diffDays >= 0 && diffDays < 7;
+    });
   }, [filteredExpenses, currentDate]);
+
+  const weekTotal = useMemo(() => {
+    return expensesForWeek.reduce((sum, e) => sum + e.amount, 0);
+  }, [expensesForWeek]);
+
+  const expensesForSelectedDay = useMemo(() => {
+    if (!selectedDate) return [];
+    return filteredExpenses.filter((e) => {
+      const d = new Date(e.date);
+      return (
+        d.getFullYear() === selectedDate.getFullYear() &&
+        d.getMonth() === selectedDate.getMonth() &&
+        d.getDate() === selectedDate.getDate()
+      );
+    });
+  }, [filteredExpenses, selectedDate]);
+
+  const dayTotal = useMemo(() => {
+    return expensesForSelectedDay.reduce((sum, e) => sum + e.amount, 0);
+  }, [expensesForSelectedDay]);
+
+  const displayExpenses = selectedDate ? expensesForSelectedDay : expensesForWeek;
 
   const chartData = useMemo(() => {
     const start = new Date(currentDate);
@@ -149,8 +170,10 @@ function DashboardView() {
         <Card className="mt-5 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-app-muted">Spent on this day</p>
-              <h2 className="mt-2 text-[34px] font-bold tracking-tight">{formatCurrency(dayTotal, settings.currency)}</h2>
+              <p className="text-sm text-app-muted">{selectedDate ? 'Spent on this day' : 'Spent this week'}</p>
+              <h2 className="mt-2 text-[34px] font-bold tracking-tight">
+                {formatCurrency(selectedDate ? dayTotal : weekTotal, settings.currency)}
+              </h2>
             </div>
             <div className="flex items-center gap-2 bg-[#f5f5f6] p-1 rounded-full text-xs font-medium">
               <button 
@@ -158,6 +181,7 @@ function DashboardView() {
                   const prev = new Date(currentDate);
                   prev.setDate(currentDate.getDate() - 7);
                   setCurrentDate(prev);
+                  setSelectedDate(null); // Clear selection to show week
                 }} 
                 className="p-1.5 hover:bg-white rounded-full transition"
               >
@@ -165,8 +189,12 @@ function DashboardView() {
               </button>
               <input 
                 type="date" 
-                value={currentDate.toISOString().split('T')[0]} 
-                onChange={(e) => setCurrentDate(new Date(e.target.value))}
+                value={(selectedDate || currentDate).toISOString().split('T')[0]} 
+                onChange={(e) => {
+                  const d = new Date(e.target.value);
+                  setSelectedDate(d);
+                  setCurrentDate(d);
+                }}
                 className="bg-transparent border-none focus:outline-none text-xs font-medium cursor-pointer"
               />
               <button 
@@ -174,6 +202,7 @@ function DashboardView() {
                   const next = new Date(currentDate);
                   next.setDate(currentDate.getDate() + 7);
                   setCurrentDate(next);
+                  setSelectedDate(null); // Clear selection to show week
                 }} 
                 className="p-1.5 hover:bg-white rounded-full transition"
               >
@@ -185,12 +214,12 @@ function DashboardView() {
         </Card>
 
         <div className="mt-6 flex items-center justify-between">
-          <h3 className="text-[26px] font-bold tracking-tight">Latest</h3>
+          <h3 className="text-[26px] font-bold tracking-tight">Expenses</h3>
         </div>
 
         <Card className="mt-3 px-4">
-          {filteredExpenses.slice(0, 8).map((expense, idx) => (
-            <div key={expense.id} className={idx !== filteredExpenses.slice(0, 8).length - 1 ? 'border-b border-app-border' : ''}>
+          {displayExpenses.map((expense, idx) => (
+            <div key={expense.id} className={idx !== displayExpenses.length - 1 ? 'border-b border-app-border' : ''}>
               <ExpenseItem
                 expense={expense}
                 currency={settings.currency}
