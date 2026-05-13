@@ -36,7 +36,10 @@ export default function LoginPage() {
   async function handleGoogleLogin() {
     try {
       setLoading(true);
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
+      if (result) {
+        router.replace('/dashboard');
+      }
     } catch {
       toast.error('Google sign in failed');
       setLoading(false);

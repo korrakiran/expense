@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithRedirect,
+  signInWithPopup,
   signOut,
   UserCredential,
   setPersistence,
@@ -23,9 +24,17 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return signInWithEmailAndPassword(auth, email, password);
 }
 
-export async function signInWithGoogle(): Promise<void> {
+export async function signInWithGoogle(): Promise<UserCredential | void> {
   await ensureAuthPersistence();
-  return signInWithRedirect(auth, googleProvider);
+  
+  const isStandalone = typeof window !== 'undefined' && 
+    ((window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches);
+    
+  if (isStandalone) {
+    return signInWithRedirect(auth, googleProvider);
+  } else {
+    return signInWithPopup(auth, googleProvider);
+  }
 }
 
 export async function signOutUser() {
