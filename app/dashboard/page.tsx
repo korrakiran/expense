@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, Filter, Plus, Search, Settings } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Filter, Plus, Search, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { AppProviders } from '@/app/providers';
@@ -42,7 +42,7 @@ function DashboardView() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<ExpenseFilters>(DEFAULT_FILTERS);
   const [databaseOpen, setDatabaseOpen] = useState(false);
-  const [viewType, setViewType] = useState<'date' | 'week' | 'month'>('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     if (!user || !activeDatabaseId) return;
@@ -70,61 +70,31 @@ function DashboardView() {
   const totalSpent = useMemo(() => filteredExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredExpenses]);
 
   const chartData = useMemo(() => {
-    if (viewType === 'week') {
-      const now = new Date();
-      const start = new Date(now);
-      start.setDate(now.getDate() - now.getDay()); // Sunday
-      
-      const labels: string[] = [];
-      const values = [0, 0, 0, 0, 0, 0, 0];
-      
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        labels.push(d.getDate().toString());
-      }
-      
-      filteredExpenses.forEach((e) => {
-        const d = new Date(e.date);
+    const start = new Date(currentDate);
+    start.setDate(currentDate.getDate() - currentDate.getDay()); // Sunday
+    
+    const labels: string[] = [];
+    const values = [0, 0, 0, 0, 0, 0, 0];
+    
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      labels.push(d.getDate().toString());
+    }
+    
+    filteredExpenses.forEach((e) => {
+      const d = new Date(e.date);
+      // Check if expense date is in the selected week
+      const diffTime = d.getTime() - start.getTime();
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      if (diffDays >= 0 && diffDays < 7) {
         const dayIdx = d.getDay(); // 0 is Sunday
         values[dayIdx] += e.amount;
-      });
-      
-      return labels.map((label, idx) => ({ label, value: values[idx] }));
-    }
+      }
+    });
     
-    if (viewType === 'month') {
-      const values: Record<string, number> = {};
-      for (let i = 1; i <= 31; i++) values[i.toString()] = 0;
-      
-      filteredExpenses.forEach((e) => {
-        const d = new Date(e.date);
-        const dayStr = d.getDate().toString();
-        if (values[dayStr] !== undefined) {
-          values[dayStr] += e.amount;
-        }
-      });
-      
-      return Object.entries(values).map(([label, value]) => ({ label, value }));
-    }
-    
-    if (viewType === 'date') {
-      const values: Record<string, number> = {};
-      for (let i = 0; i < 24; i++) values[`${i}h`] = 0;
-      
-      filteredExpenses.forEach((e) => {
-        const d = new Date(e.date);
-        const hourStr = `${d.getHours()}h`;
-        if (values[hourStr] !== undefined) {
-          values[hourStr] += e.amount;
-        }
-      });
-      
-      return Object.entries(values).map(([label, value]) => ({ label, value }));
-    }
-    
-    return [];
-  }, [filteredExpenses, viewType]);
+    return labels.map((label, idx) => ({ label, value: values[idx] }));
+  }, [filteredExpenses, currentDate]);
 
   const hasActiveFilters =
     Boolean(filters.dateFrom) ||
@@ -168,18 +138,33 @@ function DashboardView() {
               <p className="text-sm text-app-muted">Spent all time</p>
               <h2 className="mt-2 text-[34px] font-bold tracking-tight">{formatCurrency(totalSpent, settings.currency)}</h2>
             </div>
-            <div className="flex gap-1 bg-[#f5f5f6] p-1 rounded-full text-xs font-medium">
-              {(['date', 'week', 'month'] as const).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setViewType(type)}
-                  className={`px-3 py-1.5 rounded-full transition ${
-                    viewType === type ? 'bg-black text-white' : 'text-app-muted hover:text-black'
-                  }`}
-                >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 bg-[#f5f5f6] p-1 rounded-full text-xs font-medium">
+              <button 
+                onClick={() => {
+                  const prev = new Date(currentDate);
+                  prev.setDate(currentDate.getDate() - 7);
+                  setCurrentDate(prev);
+                }} 
+                className="p-1.5 hover:bg-white rounded-full transition"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <input 
+                type="date" 
+                value={currentDate.toISOString().split('T')[0]} 
+                onChange={(e) => setCurrentDate(new Date(e.target.value))}
+                className="bg-transparent border-none focus:outline-none text-xs font-medium cursor-pointer"
+              />
+              <button 
+                onClick={() => {
+                  const next = new Date(currentDate);
+                  next.setDate(currentDate.getDate() + 7);
+                  setCurrentDate(next);
+                }} 
+                className="p-1.5 hover:bg-white rounded-full transition"
+              >
+                <ChevronRight size={14} />
+              </button>
             </div>
           </div>
           <SpendingChart data={chartData} />
