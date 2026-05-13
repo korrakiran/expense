@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/store/use-auth-store';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -11,16 +12,20 @@ import { AppShell } from '@/components/layout/app-shell';
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { user, loading: authLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [authLoading, user, router]);
 
   async function handleGoogleLogin() {
     try {
       setLoading(true);
       await signInWithGoogle();
-      router.replace('/dashboard');
-      toast.success('Signed in with Google');
     } catch {
       toast.error('Google sign in failed');
-    } finally {
       setLoading(false);
     }
   }

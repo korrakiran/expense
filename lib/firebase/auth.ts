@@ -1,7 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
   UserCredential,
   setPersistence,
@@ -23,9 +23,9 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return signInWithEmailAndPassword(auth, email, password);
 }
 
-export async function signInWithGoogle(): Promise<UserCredential> {
+export async function signInWithGoogle(): Promise<void> {
   await ensureAuthPersistence();
-  return signInWithPopup(auth, googleProvider);
+  return signInWithRedirect(auth, googleProvider);
 }
 
 export async function signOutUser() {
