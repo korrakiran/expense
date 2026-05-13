@@ -69,7 +69,7 @@ function DashboardView() {
     });
   }, [expenses, filters.categories, filters.dateFrom, filters.dateTo, filters.maxAmount, filters.minAmount]);
 
-  const totalSpent = useMemo(() => filteredExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredExpenses]);
+
 
   const expensesForWeek = useMemo(() => {
     const start = new Date(currentDate);
