@@ -15,6 +15,7 @@ import { useExpenseStore } from '@/store/use-expense-store';
 import { useDatabaseStore } from '@/store/use-database-store';
 import { useState } from 'react';
 import { ExportExpensesSheet } from '@/components/settings/export-expenses-sheet';
+import { BrandedLoadingScreen } from '@/components/layout/branded-loading-screen';
 
 function SettingsView() {
   const router = useRouter();
@@ -26,7 +27,7 @@ function SettingsView() {
 
   const activeDbName = databases.find((d) => d.id === activeDatabaseId)?.name ?? 'expenses';
 
-  if (loading || !user) return <AppShell><div className="pt-20 text-center text-app-muted">Loading...</div></AppShell>;
+  if (loading || !user) return <BrandedLoadingScreen />;
 
   async function patchSettings(next: typeof settings) {
     if (!user) return;
