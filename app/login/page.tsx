@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { signInWithGoogle } from '@/lib/firebase/auth';
+import { auth } from '@/lib/firebase/client';
+import { getRedirectResult } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { AppShell } from '@/components/layout/app-shell';
 
@@ -19,6 +21,17 @@ export default function LoginPage() {
       router.replace('/dashboard');
     }
   }, [authLoading, user, router]);
+
+  useEffect(() => {
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        router.replace('/dashboard');
+      }
+    }).catch((error) => {
+      console.error(error);
+      toast.error('Redirect login failed');
+    });
+  }, [router]);
 
   async function handleGoogleLogin() {
     try {
