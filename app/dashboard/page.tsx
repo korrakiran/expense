@@ -104,6 +104,17 @@ function DashboardView() {
 
   const displayExpenses = selectedDate ? expensesForSelectedDay : expensesForWeek;
 
+  const isCurrentWeek = useMemo(() => {
+    const today = new Date();
+    const startOfCurrentWeek = new Date(today);
+    startOfCurrentWeek.setDate(today.getDate() - today.getDay());
+    
+    const startOfViewWeek = new Date(currentDate);
+    startOfViewWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    
+    return startOfCurrentWeek.toDateString() === startOfViewWeek.toDateString();
+  }, [currentDate]);
+
   const chartData = useMemo(() => {
     const start = new Date(currentDate);
     start.setDate(currentDate.getDate() - currentDate.getDay()); // Sunday
@@ -189,7 +200,7 @@ function DashboardView() {
               </button>
               <input 
                 type="date" 
-                value={(selectedDate || currentDate).toISOString().split('T')[0]} 
+                value={(selectedDate || (isCurrentWeek ? new Date() : currentDate)).toISOString().split('T')[0]} 
                 onChange={(e) => {
                   const d = new Date(e.target.value);
                   setSelectedDate(d);
