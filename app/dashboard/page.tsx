@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, ChevronLeft, ChevronRight, Filter, Plus, Search, Settings } from 'lucide-react';
+import { BrandedLoadingScreen } from '@/components/layout/branded-loading-screen';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { AppProviders } from '@/app/providers';
@@ -152,11 +153,7 @@ function DashboardView() {
   const activeDbName = databases.find((d) => d.id === activeDatabaseId)?.name ?? 'Expenses';
 
   if (loading || !user || !activeDatabaseId) {
-    return (
-      <AppShell>
-        <div className="pt-20 text-center text-app-muted">Loading...</div>
-      </AppShell>
-    );
+    return <BrandedLoadingScreen />;
   }
 
   return (
