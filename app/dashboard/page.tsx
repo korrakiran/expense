@@ -42,6 +42,7 @@ function DashboardView() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<ExpenseFilters>(DEFAULT_FILTERS);
   const [databaseOpen, setDatabaseOpen] = useState(false);
+  const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
 
   useEffect(() => {
     if (!user || !activeDatabaseId) return;
@@ -69,13 +70,51 @@ function DashboardView() {
   const totalSpent = useMemo(() => filteredExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredExpenses]);
 
   const chartData = useMemo(() => {
-    const grouped = new Map<string, number>();
-    filteredExpenses.forEach((e) => {
-      const year = new Date(e.date).getFullYear().toString();
-      grouped.set(year, (grouped.get(year) ?? 0) + e.amount);
-    });
-    return Array.from(grouped.entries()).map(([year, value]) => ({ year, value }));
-  }, [filteredExpenses]);
+    if (viewType === 'week') {
+      const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+      const values = [0, 0, 0, 0, 0, 0, 0];
+      
+      filteredExpenses.forEach((e) => {
+        const d = new Date(e.date);
+        const dayIdx = d.getDay(); // 0 is Sunday
+        values[dayIdx] += e.amount;
+      });
+      
+      return labels.map((label, idx) => ({ label, value: values[idx] }));
+    }
+    
+    if (viewType === 'month') {
+      const values: Record<string, number> = {};
+      for (let i = 1; i <= 31; i++) values[i.toString()] = 0;
+      
+      filteredExpenses.forEach((e) => {
+        const d = new Date(e.date);
+        const dayStr = d.getDate().toString();
+        if (values[dayStr] !== undefined) {
+          values[dayStr] += e.amount;
+        }
+      });
+      
+      return Object.entries(values).map(([label, value]) => ({ label, value }));
+    }
+    
+    if (viewType === 'day') {
+      const values: Record<string, number> = {};
+      for (let i = 0; i < 24; i++) values[`${i}h`] = 0;
+      
+      filteredExpenses.forEach((e) => {
+        const d = new Date(e.date);
+        const hourStr = `${d.getHours()}h`;
+        if (values[hourStr] !== undefined) {
+          values[hourStr] += e.amount;
+        }
+      });
+      
+      return Object.entries(values).map(([label, value]) => ({ label, value }));
+    }
+    
+    return [];
+  }, [filteredExpenses, viewType]);
 
   const hasActiveFilters =
     Boolean(filters.dateFrom) ||
@@ -114,9 +153,26 @@ function DashboardView() {
         </div>
 
         <Card className="mt-5 p-5">
-          <p className="text-sm text-app-muted">Spent all time</p>
-          <h2 className="mt-2 text-[34px] font-bold tracking-tight">{formatCurrency(totalSpent, settings.currency)}</h2>
-          <SpendingChart data={chartData.length ? chartData : [{ year: '2026', value: 0 }]} />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-app-muted">Spent all time</p>
+              <h2 className="mt-2 text-[34px] font-bold tracking-tight">{formatCurrency(totalSpent, settings.currency)}</h2>
+            </div>
+            <div className="flex gap-1 bg-[#f5f5f6] p-1 rounded-full text-xs font-medium">
+              {(['day', 'week', 'month'] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setViewType(type)}
+                  className={`px-3 py-1.5 rounded-full transition ${
+                    viewType === type ? 'bg-black text-white' : 'text-app-muted hover:text-black'
+                  }`}
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <SpendingChart data={chartData} />
         </Card>
 
         <div className="mt-6 flex items-center justify-between">

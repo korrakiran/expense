@@ -29,6 +29,7 @@ function SettingsView() {
   if (loading || !user) return <AppShell><div className="pt-20 text-center text-app-muted">Loading...</div></AppShell>;
 
   async function patchSettings(next: typeof settings) {
+    if (!user) return;
     setSettings(next);
     await updateSettings(user.uid, next);
     toast.success('Saved');
