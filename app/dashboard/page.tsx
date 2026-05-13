@@ -69,15 +69,14 @@ function DashboardView() {
 
   const totalSpent = useMemo(() => filteredExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredExpenses]);
 
-  const weekTotal = useMemo(() => {
-    const start = new Date(currentDate);
-    start.setDate(currentDate.getDate() - currentDate.getDay()); // Sunday
-    
+  const dayTotal = useMemo(() => {
     return filteredExpenses.reduce((sum, e) => {
       const d = new Date(e.date);
-      const diffTime = d.getTime() - start.getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
-      if (diffDays >= 0 && diffDays < 7) {
+      if (
+        d.getFullYear() === currentDate.getFullYear() &&
+        d.getMonth() === currentDate.getMonth() &&
+        d.getDate() === currentDate.getDate()
+      ) {
         return sum + e.amount;
       }
       return sum;
@@ -150,8 +149,8 @@ function DashboardView() {
         <Card className="mt-5 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-app-muted">Spent this week</p>
-              <h2 className="mt-2 text-[34px] font-bold tracking-tight">{formatCurrency(weekTotal, settings.currency)}</h2>
+              <p className="text-sm text-app-muted">Spent on this day</p>
+              <h2 className="mt-2 text-[34px] font-bold tracking-tight">{formatCurrency(dayTotal, settings.currency)}</h2>
             </div>
             <div className="flex items-center gap-2 bg-[#f5f5f6] p-1 rounded-full text-xs font-medium">
               <button 
