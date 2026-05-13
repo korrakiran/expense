@@ -28,8 +28,7 @@ export async function signInWithGoogle(): Promise<UserCredential | void> {
   await ensureAuthPersistence();
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isStandalone = typeof window !== 'undefined' && 
-    ((window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches);
+  const isStandalone = typeof window !== 'undefined' && ((window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches);
     
   if (isStandalone) {
     return signInWithRedirect(auth, googleProvider);
