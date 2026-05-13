@@ -71,8 +71,18 @@ function DashboardView() {
 
   const chartData = useMemo(() => {
     if (viewType === 'week') {
-      const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+      const now = new Date();
+      const start = new Date(now);
+      start.setDate(now.getDate() - now.getDay()); // Sunday
+      
+      const labels: string[] = [];
       const values = [0, 0, 0, 0, 0, 0, 0];
+      
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        labels.push(d.getDate().toString());
+      }
       
       filteredExpenses.forEach((e) => {
         const d = new Date(e.date);
