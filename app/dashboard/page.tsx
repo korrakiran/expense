@@ -42,7 +42,7 @@ function DashboardView() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<ExpenseFilters>(DEFAULT_FILTERS);
   const [databaseOpen, setDatabaseOpen] = useState(false);
-  const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
+  const [viewType, setViewType] = useState<'date' | 'week' | 'month'>('week');
 
   useEffect(() => {
     if (!user || !activeDatabaseId) return;
@@ -98,7 +98,7 @@ function DashboardView() {
       return Object.entries(values).map(([label, value]) => ({ label, value }));
     }
     
-    if (viewType === 'day') {
+    if (viewType === 'date') {
       const values: Record<string, number> = {};
       for (let i = 0; i < 24; i++) values[`${i}h`] = 0;
       
@@ -159,7 +159,7 @@ function DashboardView() {
               <h2 className="mt-2 text-[34px] font-bold tracking-tight">{formatCurrency(totalSpent, settings.currency)}</h2>
             </div>
             <div className="flex gap-1 bg-[#f5f5f6] p-1 rounded-full text-xs font-medium">
-              {(['day', 'week', 'month'] as const).map((type) => (
+              {(['date', 'week', 'month'] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setViewType(type)}
