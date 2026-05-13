@@ -8,6 +8,7 @@ import { getOrCreateSettings, subscribeDatabases, subscribeExpenses } from '@/li
 import { useExpenseStore } from '@/store/use-expense-store';
 import { useSettingsStore } from '@/store/use-settings-store';
 import { useDatabaseStore } from '@/store/use-database-store';
+import toast from 'react-hot-toast';
 
 export function useAuthBootstrap() {
   const { setUser, setLoading } = useAuthStore();
@@ -27,18 +28,24 @@ export function useAuthBootstrap() {
       unsubscribeExpenses = undefined;
       unsubscribeDatabases = undefined;
 
-      if (user) {
-        const settings = await getOrCreateSettings(user.uid);
-        setSettings(settings);
-        setActiveDatabaseId(settings.activeDatabaseId);
+      try {
+        if (user) {
+          const settings = await getOrCreateSettings(user.uid);
+          setSettings(settings);
+          setActiveDatabaseId(settings.activeDatabaseId);
 
-        unsubscribeDatabases = subscribeDatabases(user.uid, setDatabases);
-        unsubscribeExpenses = subscribeExpenses(user.uid, settings.activeDatabaseId, setExpenses);
-      } else {
-        setExpenses([]);
-        setDatabases([]);
+          unsubscribeDatabases = subscribeDatabases(user.uid, setDatabases);
+          unsubscribeExpenses = subscribeExpenses(user.uid, settings.activeDatabaseId, setExpenses);
+        } else {
+          setExpenses([]);
+          setDatabases([]);
+        }
+      } catch (error) {
+        console.error('Auth bootstrap error:', error);
+        toast.error('Failed to load user data');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {
